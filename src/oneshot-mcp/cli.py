@@ -1,4 +1,5 @@
-#!/usr/bin/env python3
+#! python3
+import asyncio
 import logging
 import os
 
@@ -8,6 +9,7 @@ from news.rapid import news_search
 from finance.twelvedata import historical_data
 from weather.weatherapi import weatherapi
 from knowledge.wikipedia import wikipedia as wp
+from rag import weaviate_utils
 
 log_level = os.environ.get('LOG_LEVEL', 'INFO').upper()
 logging.basicConfig(
@@ -16,18 +18,20 @@ logging.basicConfig(
     datefmt='%Y-%m-%d %H:%M:%S'
 )
 
-app = typer.Typer(help="The Fin Claw")
-social = typer.Typer(help="Claw Social Media")
+app = typer.Typer(help="The Oneshot MCP client")
+social = typer.Typer(help="Social Media")
 finance = typer.Typer(help="Financial Data")
 news = typer.Typer(help="News")
 weather = typer.Typer(help="Weather")
 knowledge = typer.Typer(help="Knowledge")
+weaviate = typer.Typer(help="Weaviate Agentic activity")
 
 app.add_typer(social, name="social")
 app.add_typer(finance, name="finance")
 app.add_typer(news, name="news")
 app.add_typer(weather, name="weather")
 app.add_typer(knowledge, name="knowledge")
+app.add_typer(weaviate, name="weaviate")
 
 @social.command()
 def trump(
@@ -68,6 +72,11 @@ def wikipedia(
 ):
     data = wp.shoot(title)
     print(data)
+
+@weaviate.command()
+def insert_patterns(
+):
+    asyncio.run(weaviate_utils.insert_patterns(os.environ.get("OS_CONFIG_PATTERN_DIR")))
 
 if __name__ == "__main__":
     app()

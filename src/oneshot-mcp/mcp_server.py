@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#! python3
 
 from mcp.server.fastmcp import FastMCP
 from social.ts import trump as t

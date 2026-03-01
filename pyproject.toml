@@ -6,4 +6,5 @@ dependencies = [
 	"mcp[cli]>=1.26.0",
 	"requests>=2.32.5",
 	"typer",
+	"weaviate-client>=4.20.1",
 ]
