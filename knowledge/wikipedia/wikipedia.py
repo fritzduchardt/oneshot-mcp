@@ -5,7 +5,7 @@ import requests
 
 URL="https://en.wikipedia.org/w/api.php"
 
-def claw(title: str) -> str:
+def shoot(title: str) -> str:
 
     params = {
         "action": "query",
@@ -15,6 +15,7 @@ def claw(title: str) -> str:
         "explaintext": "",
         "format": "json"
     }
+    logging.info(f"Looking through wikipedia: {params}")
 
     headers = {
         "User-Agent": "finclaw"

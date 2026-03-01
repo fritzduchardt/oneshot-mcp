@@ -1,9 +1,12 @@
+import logging
+
 import requests
 
 URL = "https://www.trumpstruth.org/feed"
 
-def claw(start_date: str, end_date: str) -> str:
+def shoot(start_date: str, end_date: str) -> str:
     params = {'start_date': start_date, 'end_date': end_date}
+    logging.info(f"Retrieving Trump data: {params}")
     try:
         response = requests.get(URL, params=params)
         response.raise_for_status()

@@ -9,8 +9,9 @@ import requests
 
 URL = "https://real-time-news-data.p.rapidapi.com/search"
 
-def claw(query: str, limit: int, country: str, time_published: str) -> str:
+def shoot(query: str, limit: int, country: str, time_published: str) -> str:
     params = {"query": query, "limit": limit, "country": country, "time_published": time_published}
+    logging.info(f"Searching Rapid news: {params}")
     headers = { "x-rapidapi-host": "real-time-news-data.p.rapidapi.com", "x-rapidapi-key": os.getenv("RAPID") }
     try:
         response = requests.get(URL, params=params, headers=headers)

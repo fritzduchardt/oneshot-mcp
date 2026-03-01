@@ -1,1 +1,1 @@
-from .trump import claw
+from .trump import shoot

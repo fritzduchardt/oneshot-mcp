@@ -1,5 +1,5 @@
 [project]
-name = "finclaw"
+name = "oneshot-mcp"
 version = "0.1.0"
 dependencies = [
 	"anthropic>=0.77.1",

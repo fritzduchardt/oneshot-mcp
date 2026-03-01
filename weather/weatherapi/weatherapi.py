@@ -5,7 +5,7 @@ import requests
 
 URL="http://api.weatherapi.com/v1/forecast.json"\
 
-def claw(query: str, days: int) -> str:
+def shoot(query: str, days: int) -> str:
     params = {"query": query, "days": days, "key": os.getenv("WEATHER_API")}
     logging.debug(f"Calling weather API with: {params}")
     try:

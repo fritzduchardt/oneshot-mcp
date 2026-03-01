@@ -17,7 +17,7 @@ def trump_tweets(start_date: str, end_date: str) -> str:
         end_date: end date
     """
     # Your existing logic here
-    tweets = t.claw(start_date, end_date)
+    tweets = t.shoot(start_date, end_date)
     return tweets
 
 @mcp.tool()
@@ -30,7 +30,7 @@ def historical_data(symbol: str, start_date: str, end_date: str) -> str:
         end_date: end date
     """
     # Your existing logic here
-    data = hd.claw(symbol, start_date, end_date)
+    data = hd.shoot(symbol, start_date, end_date)
     return data
 
 @mcp.tool()
@@ -44,7 +44,7 @@ def world_news(query: str, limit: int, country: str, time_published: str) -> str
         time_published: duration to the past from now, e.g. 1h, 1d, 1w
     """
     # Your existing logic here
-    data = news_search.claw(query, limit, country, time_published)
+    data = news_search.shoot(query, limit, country, time_published)
     return data
 
 if __name__ == "__main__":
