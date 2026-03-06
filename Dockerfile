@@ -11,8 +11,12 @@ COPY ./pyproject.toml /app/pyproject.toml
 COPY ./src /app/src
 
 RUN pip install --no-cache-dir --upgrade pip \
-    && pip install --no-cache-dir -e .
+    && pip install --no-cache-dir -e . \
+    && adduser --disabled-password --gecos "" --home /app --no-create-home oneshot \
+    && chown -R oneshot:oneshot /app
 
-EXPOSE 8082
+USER oneshot
+
+EXPOSE 8081
 
 ENTRYPOINT ["python", "-m", "oneshot-mcp.server"]
