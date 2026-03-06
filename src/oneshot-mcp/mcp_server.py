@@ -1,5 +1,4 @@
 #! python3
-import asyncio
 import logging
 import os
 
@@ -30,6 +29,7 @@ def trump_tweets(start_date: str, end_date: str) -> str:
         start_date: start date
         end_date: end date
     """
+    logging.info(f"Looking for Trump tweets from: {start_date} to {end_date}")
     tweets = t.shoot(start_date, end_date)
     return tweets
 

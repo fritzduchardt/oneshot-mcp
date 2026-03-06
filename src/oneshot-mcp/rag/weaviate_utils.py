@@ -20,7 +20,7 @@ def create_async_client():
             grpc_secure=False,
         ),
         additional_config=AdditionalConfig(
-            timeout=Timeout(init=30, query=60, insert=120),
+            timeout=Timeout(init=60, query=120, insert=240),
         ),
         skip_init_checks=False,
     )
@@ -43,6 +43,7 @@ async def reindex_collection(pattern_path: str, collection: str) -> bool:
                 ],
             )
 
+            request_semaphore = asyncio.Semaphore(5)
             tasks = []
             logging.info(f"Fill collection {collection}")
             for root, dirs, files in os.walk(pattern_path):
@@ -53,11 +54,10 @@ async def reindex_collection(pattern_path: str, collection: str) -> bool:
                     file_path = f"{root}/{filename}"
                     logging.info(f"Add: {file_path}")
                     tasks.append(
-                       weaviate_collection.data.insert(
-                            properties={
-                                "path": file_path,
-                                "content": Path(file_path).read_text(),
-                            }
+                        create_bounded_insert_task(
+                            request_semaphore=request_semaphore,
+                            weaviate_collection=weaviate_collection,
+                            file_path=file_path,
                         )
                     )
 
@@ -67,3 +67,13 @@ async def reindex_collection(pattern_path: str, collection: str) -> bool:
     except Exception:
         logging.exception("Failed to reindex weaviate:")
         return False
+
+
+async def create_bounded_insert_task(request_semaphore, weaviate_collection, file_path: str):
+    async with request_semaphore:
+        return await weaviate_collection.data.insert(
+            properties={
+                "path": file_path,
+                "content": Path(file_path).read_text(),
+            }
+        )
