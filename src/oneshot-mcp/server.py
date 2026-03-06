@@ -107,7 +107,7 @@ async def weaviate_reindex(collection: str) -> str:
         logging.error("Path to pattern files not provided")
         return "Failure - Path not set up"
 
-    if await weaviate_utils.reindex_collection(path, collection):
+    if await weaviate_utils.reindex_collection(path, collection, os.getenv("WEAVIATE_HOST"), os.getenv("WEAVIATE_PORT", 80), os.getenv("WEAVIATE_GRPC_PORT", 50051)):
         return "OK"
     return "Failure - failed to call weaviate"
 

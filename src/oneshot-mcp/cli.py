@@ -68,7 +68,7 @@ def hd(
 @weather.command()
 def forcast(
     city: str,
-    days: str,
+    days: int,
 ):
     data = weatherapi.shoot(city, days)
     print(data)
@@ -86,8 +86,11 @@ def wikipedia(
 def reindex(
     path: str,
     collection: str,
+    weaviate_host: str,
+    weaviate_port: int,
+    weaviate_grpc_port: int,
 ):
-    asyncio.run(weaviate_utils.reindex_collection(path, collection))
+    asyncio.run(weaviate_utils.reindex_collection(path, collection, weaviate_host, weaviate_port, weaviate_grpc_port))
 
 
 if __name__ == "__main__":

@@ -9,14 +9,14 @@ from weaviate.classes.init import AdditionalConfig, Timeout
 from weaviate.connect import ConnectionParams
 
 
-def create_async_client():
+def create_async_client(weaviate_host: str, weaviate_port: int, weaviate_grpc_port: int):
     return weaviate.WeaviateAsyncClient(
         connection_params=ConnectionParams.from_params(
-            http_host="localhost",
-            http_port=8099,
+            http_host=weaviate_host,
+            http_port=weaviate_port,
             http_secure=False,
-            grpc_host="localhost",
-            grpc_port=50051,
+            grpc_host=weaviate_host,
+            grpc_port=weaviate_grpc_port,
             grpc_secure=False,
         ),
         additional_config=AdditionalConfig(
@@ -26,10 +26,10 @@ def create_async_client():
     )
 
 
-async def reindex_collection(pattern_path: str, collection: str) -> bool:
+async def reindex_collection(pattern_path: str, collection: str, weaviate_host: str, weaviate_port: int, weaviate_grpc_port: int) -> bool:
     # noinspection PyBroadException
     try:
-        async with create_async_client() as async_client:
+        async with create_async_client(weaviate_host, weaviate_port, weaviate_grpc_port) as async_client:
             logging.info(f"Delete collection: {collection}")
             await async_client.collections.delete(collection)
 
