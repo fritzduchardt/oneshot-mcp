@@ -1,109 +1,91 @@
 #! python3
 
 import asyncio
-import os
-from datetime import date
-from typing import Optional
 from contextlib import AsyncExitStack
-
-from mcp import ClientSession, StdioServerParameters
-from mcp.client.stdio import stdio_client
+from datetime import date
 
 from anthropic import Anthropic
 from dotenv import load_dotenv
+from mcp import ClientSession
+from mcp.client.streamable_http import streamable_http_client
 
 load_dotenv()  # load environment variables from .env
 
 CLAUDE_MODEL: str ="claude-haiku-4-5"
+MCP_SERVER: str = "http://localhost:8000/mcp"
 
 class MCPClient:
     def __init__(self):
         # Initialize session and client objects
-        self.write = None
-        self.stdio = None
-        self.session: Optional[ClientSession] = None
         self.exit_stack = AsyncExitStack()
         self.anthropic = Anthropic()
     # methods will go here
 
-    async def connect_to_server(self, server_script_path: str):
-        """Connect to an MCP server
+    async def process_query(self, url: str, query: str) -> str:
 
-        Args:
-            server_script_path: Path to the server script (.py or .js)
-        """
-        is_python = server_script_path.endswith('.py')
-        if not is_python:
-            raise ValueError("Server script must be a .py")
+        # Connect to a streamable HTTP server
+        async with streamable_http_client(f"{url}") as (
+                read_stream,
+                write_stream,
+                _,
+        ):
+            # Create a session using the client streams
+            async with ClientSession(read_stream, write_stream) as session:
+                # Initialize the connection
 
-        server_params = StdioServerParameters(
-            command="python",
-            args=[server_script_path],
-            env={'TWELVE_DATA': os.getenv('TWELVE_DATA')}
-        )
+                await session.initialize()
+                # List available tools
+                response = await session.list_tools()
+                available_tools = [{
+                    "name": tool.name,
+                    "description": tool.description,
+                    "input_schema": tool.inputSchema
+                } for tool in response.tools]
+                print(f"Available tools: {[tool.name for tool in response.tools]}")
 
-        stdio_transport = await self.exit_stack.enter_async_context(stdio_client(server_params))
-        self.stdio, self.write = stdio_transport
-        self.session = await self.exit_stack.enter_async_context(ClientSession(self.stdio, self.write))
-
-        await self.session.initialize()
-
-        # List available tools
-        response = await self.session.list_tools()
-        tools = response.tools
-        print("\nConnected to server with tools:", [tool.name for tool in tools])
-
-    async def process_query(self, query: str) -> str:
-        """Process a query using Claude and available tools"""
-        messages = [
-            {
-                "role": "user",
-                "content": query
-            }
-        ]
-
-        response = await self.session.list_tools()
-        available_tools = [{
-            "name": tool.name,
-            "description": tool.description,
-            "input_schema": tool.inputSchema
-        } for tool in response.tools]
-
-        # Initial Claude API call
-        response = self.anthropic.messages.create(
-            model=CLAUDE_MODEL,
-            max_tokens=1000,
-            messages=messages,
-            tools=available_tools
-        )
-        messages.append({
-            "role": "assistant",
-            "content": response.content
-        })
-
-        # Process response and handle tool calls
-        final_text = []
-
-        tool_result_contents = []
-        for content in response.content:
-            if content.type == 'tool_use':
-                tool_name = content.name
-                tool_args = content.input
-
-                # Execute tool call
-                result = await self.session.call_tool(tool_name, tool_args)
-                final_text.append(f"[Calling tool {tool_name} with args {tool_args}]")
-                content = {
-                        "type": "tool_result",
-                        "tool_use_id": content.id,
-                        "content": result.content
+                messages = [
+                    {
+                        "role": "user",
+                        "content": query
                     }
-                tool_result_contents.append(content)
+                ]
 
-        messages.append({
-            "role": "user",
-            "content": tool_result_contents
-        })
+                # Initial Claude API call
+                response = self.anthropic.messages.create(
+                    model=CLAUDE_MODEL,
+                    max_tokens=1000,
+                    messages=messages,
+                    tools=available_tools
+                )
+                messages.append({
+                    "role": "assistant",
+                    "content": response.content
+                })
+
+                # Process response and handle tool calls
+                final_text = []
+
+                tool_result_contents = []
+                for content in response.content:
+                    if content.type == 'tool_use':
+                        tool_name = content.name
+                        tool_args = content.input
+
+                        # Execute tool call
+                        result = await session.call_tool(tool_name, tool_args)
+                        final_text.append(f"[Calling tool {tool_name} with args {tool_args}]")
+                        content = {
+                                "type": "tool_result",
+                                "tool_use_id": content.id,
+                                "content": result.content
+                            }
+                        tool_result_contents.append(content)
+
+        if len(tool_result_contents) > 0:
+            messages.append({
+                "role": "user",
+                "content": tool_result_contents
+            })
 
         # Get next response from Claude
         response = self.anthropic.messages.create(
@@ -130,7 +112,7 @@ class MCPClient:
                     break
 
                 current_date_and_time = date.today()
-                response = await self.process_query(f"We have: {current_date_and_time}. Ensure output displays well in terminal. {query}")
+                response = await self.process_query(url=MCP_SERVER, query=f"We have: {current_date_and_time}. Ensure output displays well in terminal. {query}")
                 print("\n" + response)
 
             except Exception as e:
@@ -148,7 +130,6 @@ async def main():
 
     client = MCPClient()
     try:
-        await client.connect_to_server(sys.argv[1])
         await client.chat_loop()
     finally:
         await client.cleanup()

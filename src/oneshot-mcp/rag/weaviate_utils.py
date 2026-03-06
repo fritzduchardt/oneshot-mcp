@@ -4,52 +4,68 @@ import os
 from pathlib import Path
 
 import weaviate
+from weaviate.classes.config import Configure, DataType, Property
 from weaviate.classes.init import AdditionalConfig, Timeout
 from weaviate.connect import ConnectionParams
 
-COLLECTION_NAME = "PatternFile"
-async_client = weaviate.WeaviateAsyncClient(
-    connection_params=ConnectionParams.from_params(
-        http_host="localhost",
-        http_port=8099,
-        http_secure=False,
-        grpc_host="localhost",
-        grpc_port=50051,
-        grpc_secure=False,
-    ),
-    additional_config=AdditionalConfig(
-        timeout=Timeout(init=30, query=60, insert=120),  # Values in seconds
-    ),
-    skip_init_checks=False
-)
 
-async def insert_patterns(pattern_path: str):
-    from weaviate.classes.config import Configure, Property, DataType
+def create_async_client():
+    return weaviate.WeaviateAsyncClient(
+        connection_params=ConnectionParams.from_params(
+            http_host="localhost",
+            http_port=8099,
+            http_secure=False,
+            grpc_host="localhost",
+            grpc_port=50051,
+            grpc_secure=False,
+        ),
+        additional_config=AdditionalConfig(
+            timeout=Timeout(init=30, query=60, insert=120),
+        ),
+        skip_init_checks=False,
+    )
 
-    async with async_client:
-        logging.info(f"Delete collection: {COLLECTION_NAME}")
-        await async_client.collections.delete(COLLECTION_NAME)
-        logging.info(f"Create collection: {COLLECTION_NAME}")
-        collection = await async_client.collections.create(
-            name=f"{COLLECTION_NAME}",
-            vector_config=Configure.Vectors.text2vec_openai(vectorize_collection_name=True),
-            properties=[
-                Property(name="path", data_type=DataType.TEXT),
-                Property(name="content", data_type=DataType.TEXT),
-            ],
-        )
 
-        tasks = []
-        logging.info(f"Fill collection {COLLECTION_NAME}")
-        for root, dirs, files in os.walk(pattern_path):
-            for filename in files:
-                if filename.endswith('.md'):
+async def reindex_collection(pattern_path: str, collection: str) -> bool:
+    # noinspection PyBroadException
+    try:
+        async with create_async_client() as async_client:
+            logging.info(f"Delete collection: {collection}")
+            await async_client.collections.delete(collection)
+
+            logging.info(f"Create collection: {collection}")
+            weaviate_collection = await async_client.collections.create(
+                name=f"{collection}",
+                vector_config=Configure.Vectors.text2vec_openai(vectorize_collection_name=True),
+                properties=[
+                    Property(name="path", data_type=DataType.TEXT),
+                    Property(name="content", data_type=DataType.TEXT),
+                ],
+            )
+
+            tasks = []
+            logging.info(f"Fill collection {collection}")
+            for root, dirs, files in os.walk(pattern_path):
+                for filename in files:
+                    if not filename.endswith(".md"):
+                        continue
+
                     file_path = f"{root}/{filename}"
                     logging.info(f"Add: {file_path}")
-                    tasks.append(collection.data.insert(properties={
-                        "path": file_path,
-                        "content": Path(file_path).read_text()
-                    }))
+                    tasks.append(
+                        asyncio.create_task(
+                            weaviate_collection.data.insert(
+                                properties={
+                                    "path": file_path,
+                                    "content": Path(file_path).read_text(),
+                                }
+                            )
+                        )
+                    )
 
-
-        await asyncio.gather(*tasks)
+            if tasks:
+                await asyncio.gather(*tasks)
+            return True
+    except Exception:
+        logging.exception("Failed to reindex weaviate:")
+        return False

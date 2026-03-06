@@ -18,7 +18,7 @@ logging.basicConfig(
     datefmt='%Y-%m-%d %H:%M:%S'
 )
 
-app = typer.Typer(help="The Oneshot MCP client")
+app = typer.Typer(help="The Oneshot MCP client", context_settings={"help_option_names": {"-h", "--help"}})
 social = typer.Typer(help="Social Media")
 finance = typer.Typer(help="Financial Data")
 news = typer.Typer(help="News")
@@ -33,6 +33,7 @@ app.add_typer(weather, name="weather")
 app.add_typer(knowledge, name="knowledge")
 app.add_typer(weaviate, name="weaviate")
 
+
 @social.command()
 def trump(
         start_date: str,
@@ -41,12 +42,14 @@ def trump(
     tweets = t.shoot(start_date, end_date)
     print(tweets)
 
+
 @news.command()
 def world(
-    query: str, limit: int, country: str, time_published: str
+        query: str, limit: int, country: str, time_published: str
 ):
     news_result = news_search.shoot(query, limit, country, time_published)
     print(news_result)
+
 
 @finance.command()
 def hd(
@@ -58,6 +61,7 @@ def hd(
     data = historical_data.shoot(symbol, start_date, end_date, interval)
     print(data)
 
+
 @weather.command()
 def forcast(
         city: str,
@@ -66,6 +70,7 @@ def forcast(
     data = weatherapi.shoot(city, days)
     print(data)
 
+
 @knowledge.command()
 def wikipedia(
         title: str,
@@ -73,10 +78,14 @@ def wikipedia(
     data = wp.shoot(title)
     print(data)
 
+
 @weaviate.command()
-def insert_patterns(
+def reindex(
+        path: str,
+        collection: str
 ):
-    asyncio.run(weaviate_utils.insert_patterns(os.environ.get("OS_CONFIG_PATTERN_DIR")))
+    asyncio.run(weaviate_utils.reindex_collection(path, collection))
+
 
 if __name__ == "__main__":
     app()
