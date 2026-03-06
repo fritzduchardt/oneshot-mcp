@@ -1,21 +1,21 @@
-#! python3
 import asyncio
 import logging
 import os
 
 import typer
-from social.ts import trump as t
-from news.rapid import news_search
-from finance.twelvedata import historical_data
-from weather.weatherapi import weatherapi
-from knowledge.wikipedia import wikipedia as wp
-from rag import weaviate_utils
 
-log_level = os.environ.get('LOG_LEVEL', 'INFO').upper()
+from .finance.twelvedata import historical_data
+from .knowledge.wikipedia import wikipedia as wp
+from .news.rapid import news_search
+from .rag import weaviate_utils
+from .social.ts import trump as t
+from .weather.weatherapi import weatherapi
+
+log_level = os.environ.get("LOG_LEVEL", "INFO").upper()
 logging.basicConfig(
     level=log_level,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    datefmt='%Y-%m-%d %H:%M:%S'
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
 )
 
 app = typer.Typer(help="The Oneshot MCP client", context_settings={"help_option_names": {"-h", "--help"}})
@@ -36,8 +36,8 @@ app.add_typer(weaviate, name="weaviate")
 
 @social.command()
 def trump(
-        start_date: str,
-        end_date: str
+    start_date: str,
+    end_date: str,
 ):
     tweets = t.shoot(start_date, end_date)
     print(tweets)
@@ -45,7 +45,10 @@ def trump(
 
 @news.command()
 def world(
-        query: str, limit: int, country: str, time_published: str
+    query: str,
+    limit: int,
+    country: str,
+    time_published: str,
 ):
     news_result = news_search.shoot(query, limit, country, time_published)
     print(news_result)
@@ -53,10 +56,10 @@ def world(
 
 @finance.command()
 def hd(
-        symbol: str,
-        start_date: str,
-        end_date: str,
-        interval: str
+    symbol: str,
+    start_date: str,
+    end_date: str,
+    interval: str,
 ):
     data = historical_data.shoot(symbol, start_date, end_date, interval)
     print(data)
@@ -64,8 +67,8 @@ def hd(
 
 @weather.command()
 def forcast(
-        city: str,
-        days: str,
+    city: str,
+    days: str,
 ):
     data = weatherapi.shoot(city, days)
     print(data)
@@ -73,7 +76,7 @@ def forcast(
 
 @knowledge.command()
 def wikipedia(
-        title: str,
+    title: str,
 ):
     data = wp.shoot(title)
     print(data)
@@ -81,8 +84,8 @@ def wikipedia(
 
 @weaviate.command()
 def reindex(
-        path: str,
-        collection: str
+    path: str,
+    collection: str,
 ):
     asyncio.run(weaviate_utils.reindex_collection(path, collection))
 

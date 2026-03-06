@@ -1,11 +1,18 @@
-FROM python:3.14-slim
+FROM python:3.14.3-slim
+
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONPATH=/app/src
+ENV PORT=8081
 
 WORKDIR /app
 
-COPY pyproject.toml .
+COPY ./pyproject.toml /app/pyproject.toml
+COPY ./src /app/src
 
-RUN pip install --no-cache-dir -e .
+RUN pip install --no-cache-dir --upgrade pip \
+    && pip install --no-cache-dir -e .
 
-COPY . .
+EXPOSE 8082
 
-CMD ["./streaming_mcp_server.py"]
+ENTRYPOINT ["python", "-m", "oneshot-mcp.server"]

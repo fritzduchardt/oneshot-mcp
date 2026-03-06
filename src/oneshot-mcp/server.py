@@ -1,21 +1,20 @@
-#! python3
 import logging
 import os
 
 from mcp.server.fastmcp import FastMCP
 
-from finance.twelvedata import historical_data as hd
-from knowledge.wikipedia import wikipedia as wp
-from news.rapid import news_search
-from rag import weaviate_utils
-from social.ts import trump as t
-from weather.weatherapi import weatherapi
+from .finance.twelvedata import historical_data as hd
+from .knowledge.wikipedia import wikipedia as wp
+from .news.rapid import news_search
+from .rag import weaviate_utils
+from .social.ts import trump as t
+from .weather.weatherapi import weatherapi
 
-log_level = os.environ.get('LOG_LEVEL', 'INFO').upper()
+log_level = os.environ.get("LOG_LEVEL", "INFO").upper()
 logging.basicConfig(
     level=log_level,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    datefmt='%Y-%m-%d %H:%M:%S'
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
 )
 
 mcp = FastMCP(name="StatelessServer", stateless_http=False, host="0.0.0.0")
@@ -110,8 +109,7 @@ async def weaviate_reindex(collection: str) -> str:
 
     if await weaviate_utils.reindex_collection(path, collection):
         return "OK"
-    else:
-        return "Failure - failed to call weaviate"
+    return "Failure - failed to call weaviate"
 
 
 if __name__ == "__main__":
