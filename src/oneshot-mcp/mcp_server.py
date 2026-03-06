@@ -19,7 +19,8 @@ logging.basicConfig(
     datefmt='%Y-%m-%d %H:%M:%S'
 )
 
-mcp = FastMCP(name="StatelessServer",stateless_http=False, host="0.0.0.0")
+mcp = FastMCP(name="StatelessServer", stateless_http=False, host="0.0.0.0")
+
 
 @mcp.tool()
 def trump_tweets(start_date: str, end_date: str) -> str:
@@ -31,6 +32,7 @@ def trump_tweets(start_date: str, end_date: str) -> str:
     """
     tweets = t.shoot(start_date, end_date)
     return tweets
+
 
 @mcp.tool()
 def historical_data(symbol: str, start_date: str, end_date: str, interval: str) -> str:
@@ -45,6 +47,7 @@ def historical_data(symbol: str, start_date: str, end_date: str, interval: str) 
     data = hd.shoot(symbol, start_date, end_date, interval)
     return data
 
+
 @mcp.tool()
 def world_news(query: str, limit: int, country: str, time_published: str) -> str:
     """World news
@@ -58,6 +61,7 @@ def world_news(query: str, limit: int, country: str, time_published: str) -> str
     data = news_search.shoot(query, limit, country, time_published)
     return data
 
+
 @mcp.tool()
 def weather_forcast(city: str, days: int) -> str:
     """Weather forcast
@@ -69,6 +73,7 @@ def weather_forcast(city: str, days: int) -> str:
     data = weatherapi.shoot(city, days)
     return data
 
+
 @mcp.tool()
 def wikipedia(title: str) -> str:
     """Wikipedia
@@ -79,20 +84,34 @@ def wikipedia(title: str) -> str:
     data = wp.shoot(title)
     return data
 
+
 @mcp.tool()
-def weaviate_reindex(collection: str) -> str:
+async def weaviate_reindex(collection: str) -> str:
     """Weaviate reindex
 
     Args:
         collection: collection to reindex
     """
     logging.info(f"Calling weaviate reindex for: {collection}")
+
     if collection == "ObsidianFile":
         path = os.environ.get("OS_CONFIG_PATTERN_DIR")
+    elif collection == "PatternFile":
+        base_dir = os.environ.get("OS_MARKDOWN_BASE_DIR")
+        vault_dir = os.environ.get("OS_MARKDOWN_VAULT_DIR_1")
+        path = f"{base_dir}/{vault_dir}"
     else:
-        path = f"{os.environ.get("OS_MARKDOWN_BASE_DIR")}/{os.environ.get("OS_MARKDOWN_VAULT_DIR_1")}"
-    res = asyncio.run(weaviate_utils.reindex_collection(path, collection))
-    return "OK"
+        logging.error(f"Collection unknown: {collection}")
+        return "Failure - Collection unknown"
+
+    if not path:
+        logging.error("Path to pattern files not provided")
+        return "Failure - Path not set up"
+
+    if await weaviate_utils.reindex_collection(path, collection):
+        return "OK"
+    else:
+        return "Failure - failed to call weaviate"
 
 
 if __name__ == "__main__":

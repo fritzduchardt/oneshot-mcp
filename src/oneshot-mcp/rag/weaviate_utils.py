@@ -53,13 +53,11 @@ async def reindex_collection(pattern_path: str, collection: str) -> bool:
                     file_path = f"{root}/{filename}"
                     logging.info(f"Add: {file_path}")
                     tasks.append(
-                        asyncio.create_task(
-                            weaviate_collection.data.insert(
-                                properties={
-                                    "path": file_path,
-                                    "content": Path(file_path).read_text(),
-                                }
-                            )
+                       weaviate_collection.data.insert(
+                            properties={
+                                "path": file_path,
+                                "content": Path(file_path).read_text(),
+                            }
                         )
                     )
 
