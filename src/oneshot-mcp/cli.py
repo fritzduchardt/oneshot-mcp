@@ -92,6 +92,16 @@ def reindex(
 ):
     asyncio.run(weaviate_utils.reindex_collection(path, collection, weaviate_host, weaviate_port, weaviate_grpc_port))
 
+@weaviate.command()
+def call(
+    prompt: str,
+    collection: str="PatternFile",
+    weaviate_host: str="localhost",
+    weaviate_port: int=8099,
+    weaviate_grpc_port: int=50051,
+):
+    response: dict[str, str] = asyncio.run(weaviate_utils.call_weaviate(collection, prompt, weaviate_host, weaviate_port, weaviate_grpc_port))
+    logging.info(response)
 
 if __name__ == "__main__":
     app()

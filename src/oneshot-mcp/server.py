@@ -17,7 +17,9 @@ logging.basicConfig(
     datefmt="%Y-%m-%d %H:%M:%S",
 )
 
-mcp = FastMCP(name="StatelessServer", stateless_http=False, host="0.0.0.0")
+server_host = os.environ.get("HOST", "0.0.0.0")
+server_port = int(os.environ.get("PORT", "9000"))
+mcp = FastMCP(name="StatelessServer", stateless_http=False, host=server_host, port=server_port)
 
 
 @mcp.tool()

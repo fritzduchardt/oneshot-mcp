@@ -77,3 +77,26 @@ async def create_bounded_insert_task(request_semaphore, weaviate_collection, fil
                 "content": Path(file_path).read_text(),
             }
         )
+
+
+async def call_weaviate(collection: str, prompt: str, weaviate_host: str, weaviate_port: int, weaviate_grpc_port: int) -> dict[str, str]:
+    with weaviate.WeaviateClient(
+            connection_params=ConnectionParams.from_params(
+                http_host=weaviate_host,
+                http_port=weaviate_port,
+                http_secure=False,
+                grpc_host=weaviate_host,
+                grpc_port=weaviate_grpc_port,
+                grpc_secure=False,
+            ),
+    ) as client:
+        pattern = client.collections.use(collection)
+        from weaviate.collections.classes.grpc import MetadataQuery
+        response = pattern.query.near_text(
+            query=prompt,
+            limit=1,
+            return_metadata=MetadataQuery(distance=True)
+        )
+        if response.objects:
+            return response.objects[0].properties
+    return {}

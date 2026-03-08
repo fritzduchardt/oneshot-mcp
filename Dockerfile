@@ -17,6 +17,6 @@ RUN pip install --no-cache-dir --upgrade pip \
 
 USER oneshot
 
-EXPOSE 8081
+EXPOSE ${PORT}
 
 ENTRYPOINT ["python", "-m", "oneshot-mcp.server"]
