@@ -3,10 +3,12 @@ import json
 import logging
 import os
 from pathlib import Path
+from typing import Any
 
 import weaviate
 from weaviate.classes.config import Configure, DataType, Property
 from weaviate.classes.init import AdditionalConfig, Timeout
+from weaviate.collections.classes.internal import Object
 from weaviate.connect import ConnectionParams
 
 
@@ -27,7 +29,7 @@ def create_async_client(weaviate_host: str, weaviate_port: int, weaviate_grpc_po
     )
 
 
-async def reindex_collection(pattern_path: str, collection: str, weaviate_host: str, weaviate_port: int, weaviate_grpc_port: int) -> bool:
+async def reindex_collection(pattern_paths: list[str], collection: str, weaviate_host: str, weaviate_port: int, weaviate_grpc_port: int) -> bool:
     # noinspection PyBroadException
     try:
         async with create_async_client(weaviate_host, weaviate_port, weaviate_grpc_port) as async_client:
@@ -47,20 +49,24 @@ async def reindex_collection(pattern_path: str, collection: str, weaviate_host: 
             request_semaphore = asyncio.Semaphore(5)
             tasks = []
             logging.info(f"Fill collection {collection}")
-            for root, dirs, files in os.walk(pattern_path):
-                for filename in files:
-                    if not filename.endswith(".md"):
-                        continue
+            for pattern_path in pattern_paths:
+                for root, dirs, files in os.walk(pattern_path):
 
-                    file_path = f"{root}/{filename}"
-                    logging.info(f"Add: {file_path}")
-                    tasks.append(
-                        create_bounded_insert_task(
-                            request_semaphore=request_semaphore,
-                            weaviate_collection=weaviate_collection,
-                            file_path=file_path,
+                    dirs[:] = _filter_dirs(dirs)
+
+                    for filename in files:
+                        if not filename.endswith(".md"):
+                            continue
+
+                        file_path = f"{root}/{filename}"
+                        logging.info(f"Add: {file_path}")
+                        tasks.append(
+                            create_bounded_insert_task(
+                                request_semaphore=request_semaphore,
+                                weaviate_collection=weaviate_collection,
+                                file_path=file_path,
+                            )
                         )
-                    )
 
             if tasks:
                 await asyncio.gather(*tasks)
@@ -70,23 +76,27 @@ async def reindex_collection(pattern_path: str, collection: str, weaviate_host: 
         return False
 
 
+
+def _filter_dirs(dirs: list[str]) -> list[str]:
+    return [d for d in dirs if not d.startswith(".") ]
+
 async def create_bounded_insert_task(request_semaphore, weaviate_collection, file_path: str):
     async with request_semaphore:
         return await weaviate_collection.data.insert(
             properties={
                 "path": file_path,
-                "content": Path(file_path).read_text(),
+                "content": f"filename: {Path(file_path).name}\n{Path(file_path).read_text()}",
             }
         )
 
 
-async def call_weaviate(collection: str, prompt: str, weaviate_host: str, weaviate_port: int, weaviate_grpc_port: int) -> dict[str, str]:
+async def call_weaviate(collection: str, prompt: str, limit: int, certainty: int, weaviate_host: str, weaviate_port: int, weaviate_grpc_host: str, weaviate_grpc_port: int) -> list[Object[Any, Any]]:
     with weaviate.WeaviateClient(
             connection_params=ConnectionParams.from_params(
                 http_host=weaviate_host,
                 http_port=weaviate_port,
                 http_secure=False,
-                grpc_host=weaviate_host,
+                grpc_host=weaviate_grpc_host,
                 grpc_port=weaviate_grpc_port,
                 grpc_secure=False,
             ),
@@ -95,9 +105,8 @@ async def call_weaviate(collection: str, prompt: str, weaviate_host: str, weavia
         from weaviate.collections.classes.grpc import MetadataQuery
         response = pattern.query.near_text(
             query=prompt,
-            limit=1,
+            limit=limit,
+            certainty=certainty,
             return_metadata=MetadataQuery(distance=True)
         )
-        if response.objects:
-            return response.objects[0].properties
-    return {}
+        return response.objects

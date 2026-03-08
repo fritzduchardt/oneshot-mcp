@@ -1,10 +1,11 @@
 import asyncio
 import logging
 import os
-import json
 from pathlib import Path
+from typing import Any
 
 import typer
+from weaviate.collections.classes.internal import Object
 
 from .finance.twelvedata import historical_data
 from .knowledge.wikipedia import wikipedia as wp
@@ -87,32 +88,45 @@ def wikipedia(
 @weaviate.command()
 def reindex(
     collection: str,
-    rendered_templates_dir_path: str,
     weaviate_host: str = 'localhost',
     weaviate_port: int = 8099,
     weaviate_grpc_port: int = 50051,
+    rendered_templates_dir_paths: list[str] = typer.Option([], "--file-paths", help="Paths to files to index"),
 ):
-    if not Path(rendered_templates_dir_path).exists():
-        logging.error(f"Path does not exist: {rendered_templates_dir_path}")
-        return
+    for path in rendered_templates_dir_paths:
+        if not Path(path).exists():
+            logging.error(f"Path does not exist: {path}")
+            return
 
     asyncio.run(weaviate_utils.reindex_collection(
-        rendered_templates_dir_path, collection, weaviate_host, weaviate_port, weaviate_grpc_port
+        rendered_templates_dir_paths, collection, weaviate_host, weaviate_port, weaviate_grpc_port
     ))
 
 
 @weaviate.command()
 def call(
-    prompt: str,
-    collection: str = 'PatternFile',
+    collection: str,
+    prompt: list[str] = typer.Argument([], help="search prompt"),
     weaviate_host: str = 'localhost',
     weaviate_port: int = 8099,
+    weaviate_grpc_host: str = 'localhost',
     weaviate_grpc_port: int = 50051,
+    limit: int = 1,
+    certainty: float = 0.7,
 ):
-    response: dict[str, str] = asyncio.run(
-        weaviate_utils.call_weaviate(collection, prompt, weaviate_host, weaviate_port, weaviate_grpc_port)
+    prompt_str = ""
+    if prompt:
+        prompt_str = " ".join(prompt)
+    resp: list[Object[Any, Any]] = asyncio.run(
+        weaviate_utils.call_weaviate(
+            collection, prompt_str, limit, certainty, weaviate_host, weaviate_port, weaviate_grpc_host, weaviate_grpc_port
+        )
     )
-    logging.info('Weaviate response:\n%s', json.dumps(response, indent=2, ensure_ascii=False))
+    for i, obj in enumerate(resp):
+        path = obj.properties["path"]
+        # content = obj.properties["content"]
+        logging.info(f"{i+1}: path: {path}")
+        # print(f'FILENAME:{path}\n{content}\n\n')
 
 
 if __name__ == '__main__':
