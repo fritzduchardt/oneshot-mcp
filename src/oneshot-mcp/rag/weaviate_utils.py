@@ -12,13 +12,13 @@ from weaviate.collections.classes.internal import Object
 from weaviate.connect import ConnectionParams
 
 
-def create_async_client(weaviate_host: str, weaviate_port: int, weaviate_grpc_port: int):
+def create_async_client(weaviate_host: str, weaviate_port: int, weaviate_grpc_host: str, weaviate_grpc_port: int):
     return weaviate.WeaviateAsyncClient(
         connection_params=ConnectionParams.from_params(
             http_host=weaviate_host,
             http_port=weaviate_port,
             http_secure=False,
-            grpc_host=weaviate_host,
+            grpc_host=weaviate_grpc_host,
             grpc_port=weaviate_grpc_port,
             grpc_secure=False,
         ),
@@ -29,10 +29,10 @@ def create_async_client(weaviate_host: str, weaviate_port: int, weaviate_grpc_po
     )
 
 
-async def reindex_collection(pattern_paths: list[str], collection: str, weaviate_host: str, weaviate_port: int, weaviate_grpc_port: int) -> bool:
+async def reindex_collection(pattern_paths: list[str], collection: str, weaviate_host: str, weaviate_port: int, weaviate_grpc_host: str, weaviate_grpc_port: int) -> bool:
     # noinspection PyBroadException
     try:
-        async with create_async_client(weaviate_host, weaviate_port, weaviate_grpc_port) as async_client:
+        async with create_async_client(weaviate_host, weaviate_port, weaviate_grpc_host, weaviate_grpc_port) as async_client:
             logging.info(f"Delete collection: {collection}")
             await async_client.collections.delete(collection)
 
