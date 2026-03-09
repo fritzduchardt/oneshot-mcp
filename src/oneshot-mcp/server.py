@@ -92,7 +92,7 @@ async def weaviate_reindex(collection: str) -> str:
     """Weaviate reindex
 
     Args:
-        collection: collection to reindex
+        collection: collection to reindex. Allowed values: PatternFile, ObsidianFile
     """
     logging.info(f"Calling weaviate reindex for: {collection}")
     paths: list[str] = []
