@@ -48,7 +48,8 @@ async def reindex_collection(pattern_paths: list[str], collection: str, weaviate
 
             request_semaphore = asyncio.Semaphore(5)
             tasks = []
-            logging.info(f"Fill collection {collection}")
+            count = 0
+            logging.info(f"Fill collection {collection} with: {pattern_paths}")
             for pattern_path in pattern_paths:
                 for root, dirs, files in os.walk(pattern_path):
 
@@ -67,10 +68,12 @@ async def reindex_collection(pattern_paths: list[str], collection: str, weaviate
                                 file_path=file_path,
                             )
                         )
-
+                        count = count + 1
             if tasks:
                 await asyncio.gather(*tasks)
-            return True
+            if count > 0:
+                return True
+            return False
     except Exception:
         logging.exception("Failed to reindex weaviate:")
         return False

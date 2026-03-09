@@ -1,5 +1,6 @@
 import logging
 import os
+from pathlib import Path
 
 from mcp.server.fastmcp import FastMCP
 
@@ -94,22 +95,28 @@ async def weaviate_reindex(collection: str) -> str:
         collection: collection to reindex
     """
     logging.info(f"Calling weaviate reindex for: {collection}")
-
-    if collection == "ObsidianFile":
+    paths: list[str] = []
+    if collection == "PatternFile":
         path = os.environ.get("OS_CONFIG_PATTERN_DIR")
-    elif collection == "PatternFile":
+        paths.append(path)
+    elif collection == "ObsidianFile":
         base_dir = os.environ.get("OS_MARKDOWN_BASE_DIR")
-        vault_dir = os.environ.get("OS_MARKDOWN_VAULT_DIR_1")
-        path = f"{base_dir}/{vault_dir}"
+        paths.append(f"{base_dir}/{os.environ.get("OS_MARKDOWN_VAULT_DIR_1")}")
+        paths.append(f"{base_dir}/{os.environ.get("OS_MARKDOWN_VAULT_DIR_2")}")
     else:
         logging.error(f"Collection unknown: {collection}")
         return "Failure - Collection unknown"
 
-    if not path:
-        logging.error("Path to pattern files not provided")
+    if not paths:
+        logging.error(f"Path to collection: {collection} not provided")
         return "Failure - Path not set up"
 
-    if await weaviate_utils.reindex_collection([path], collection, os.getenv("WEAVIATE_HOST"), os.getenv("WEAVIATE_PORT", 80), os.getenv("WEAVIATE_GRPC_HOST"), os.getenv("WEAVIATE_GRPC_PORT", 50051)):
+    for path in paths:
+        if not Path(path).exists():
+            logging.error(f"Path to collection: {collection} incorrect: {path}")
+            return f"Failure - {collection} path incorrect"
+
+    if await weaviate_utils.reindex_collection(paths, collection, os.getenv("WEAVIATE_HOST", "localhost"), os.getenv("WEAVIATE_PORT", 80), os.getenv("WEAVIATE_GRPC_HOST", "localhost"), os.getenv("WEAVIATE_GRPC_PORT", 50051)):
         return "OK"
     return "Failure - failed to call weaviate"
 
