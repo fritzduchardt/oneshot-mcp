@@ -160,10 +160,11 @@ def categories():
 
 @stats.command()
 def read(
-        owner:str,
-        category:str,
+        owners: list[str],
+        category: str,
+        key: Optional[str] = None,
 ):
-    rows = read_stats(owner, category)
+    rows = read_stats(owners, category, key)
     print(rows)
 
 

@@ -44,21 +44,24 @@ def list_categories() -> list[str]:
             return [row[0] for row in rows]
 
 
-def read_stats(owner: str, category: str) -> List[Dict[str, str]]:
-    logging.info(f'Reading stats for {owner} / {category}')
+def read_stats(owners: List[str], category: str, key: Optional[str] = None) -> List[Dict[str, str]]:
+    logging.info(f'Reading stats for {owners} / {category} / {key}')
     with psycopg.connect('dbname=oneshot user=app') as conn:
 
         with conn.cursor() as cur:
             query = 'SELECT owner, key, value, category, description, created_at FROM oneshot_stats'
-            params: List[str] = []
+            params: List[object] = []
             conditions: List[str] = []
 
-            if owner:
-                conditions.append('owner = %s')
-                params.append(owner)
+            if owners:
+                conditions.append('LOWER(owner) = ANY(%s)')
+                params.append([owner.lower() for owner in owners])
             if category:
-                conditions.append('category = %s')
-                params.append(category)
+                conditions.append('LOWER(category) = %s')
+                params.append(category.lower())
+            if key:
+                conditions.append('LOWER(key) = %s')
+                params.append(key.lower())
 
             if conditions:
                 query += ' WHERE ' + ' AND '.join(conditions)

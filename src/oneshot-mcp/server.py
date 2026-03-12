@@ -115,14 +115,15 @@ def list_stats_categories() -> list[str]:
 
 
 @mcp.tool()
-def read_stats(owner: str, category: str) -> list[dict]:
+def read_stats(owners: list[str], category: str, key: str | None = None) -> list[dict]:
     """Read Private Stats
 
     Args:
-        owner: owner filter
+        owners: owner filter
         category: category filter
+        key: key filter
     """
-    return stats_read_stats(owner, category)
+    return stats_read_stats(owners, category, key)
 
 
 @mcp.tool()
