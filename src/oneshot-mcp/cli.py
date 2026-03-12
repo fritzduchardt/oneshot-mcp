@@ -14,7 +14,7 @@ from .knowledge.wikipedia import wikipedia as wp
 from .news.rapid import news_search
 from .rag import weaviate_utils
 from .social.ts import trump as t
-from .stats.stats import insert_stats, list_categories
+from .stats.stats import insert_stats, list_categories, read_stats
 from .weather.weatherapi import weatherapi
 
 log_level = os.environ.get('LOG_LEVEL', 'INFO').upper()
@@ -136,17 +136,17 @@ def call(
 def insert(
         row: Optional[list[str]] = typer.Option(None, "--row", "-r", help="Row entry to add")
 ):
-    data:List[Dict[str,str]] = []
+    data: List[Dict[str, str]] = []
     for r in row:
         reader = csv.reader(io.StringIO(r))
         row_data = next(reader)
         data.append({
-            "owner": row_data[0],
-            "key": row_data[1],
-            "value": row_data[2],
-            "category": row_data[3],
-            "description": row_data[4],
-            "created_at": row_data[5]
+            'owner': row_data[0],
+            'key': row_data[1],
+            'value': row_data[2],
+            'category': row_data[3],
+            'description': row_data[4],
+            'created_at': row_data[5]
         })
     insert_stats(data)
     logging.info('Stats inserted successfully')
@@ -156,6 +156,15 @@ def insert(
 def categories():
     categories_list = list_categories()
     print(categories_list)
+
+
+@stats.command()
+def read(
+        owner:str,
+        category:str,
+):
+    rows = read_stats(owner, category)
+    print(rows)
 
 
 if __name__ == '__main__':

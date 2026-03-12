@@ -10,7 +10,7 @@ from .knowledge.wikipedia import wikipedia as wp
 from .news.rapid import news_search
 from .rag import weaviate_utils
 from .social.ts import trump as t
-from .stats.stats import insert_stats as stats_insert_stats, list_categories as stats_list_categories
+from .stats.stats import insert_stats as stats_insert_stats, list_categories as stats_list_categories, read_stats as stats_read_stats
 from .weather.weatherapi import weatherapi
 
 log_level = os.environ.get('LOG_LEVEL', 'INFO').upper()
@@ -91,7 +91,7 @@ def wikipedia(title: str) -> str:
 
 @mcp.tool()
 def insert_stats(payload: str) -> str:
-    """Insert stats
+    """Insert Private Stats
 
     Args:
         payload: json payload representing a list of stat objects, e.g. [{"owner":"alice","key":"k1","value":"v1","category":"finance","description":"monthly report"}]. Optionally: "created_at", e.g.:"2026-12-03 14:05:30"
@@ -106,12 +106,23 @@ def insert_stats(payload: str) -> str:
 
 @mcp.tool()
 def list_stats_categories() -> list[str]:
-    """List stat categories
+    """List Private Stats categories
 
     Returns:
         list of unique stat categories sorted ascending
     """
     return stats_list_categories()
+
+
+@mcp.tool()
+def read_stats(owner: str, category: str) -> list[dict]:
+    """Read Private Stats
+
+    Args:
+        owner: owner filter
+        category: category filter
+    """
+    return stats_read_stats(owner, category)
 
 
 @mcp.tool()
