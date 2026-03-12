@@ -1,20 +1,34 @@
+import logging
+from typing import Dict, List
+
 import psycopg
 
-def insert_stats(owner:str, key:str, value: str, category: str, description: str):
+def insert_stats(data: List[Dict[str, str]]) -> bool:
 
-    with psycopg.connect("dbname=oneshot user=app") as conn:
+    try:
+        with psycopg.connect("dbname=oneshot user=app") as conn:
 
-        # Open a cursor to perform database operations
-        with conn.cursor() as cur:
+            # Open a cursor to perform database operations
+            with conn.cursor() as cur:
 
-            # Pass data to fill a query placeholders and let Psycopg perform
-            # the correct conversion (no SQL injections!)
-            cur.execute(
-                "INSERT INTO oneshot_stats (owner, key, value, category, description) VALUES (%s, %s, %s, %s, %s)",
-                (owner, key, value, category, description)
-            )
+                for row in data:
+                    if "created_at" in row and row["created_at"] is not None:
+                        cur.execute(
+                            "INSERT INTO oneshot_stats (owner, key, value, category, description, created_at) VALUES (%s, %s, %s, %s, %s, %s)",
+                            (row["owner"], row["key"], row["value"], row["category"], row["description"], row["created_at"])
+                        )
+                    else:
+                        cur.execute(
+                            "INSERT INTO oneshot_stats (owner, key, value, category, description) VALUES (%s, %s, %s, %s, %s)",
+                            (row["owner"], row["key"], row["value"], row["category"], row["description"])
+                        )
+                    logging.info(f"Inserted oneshot stat: {row}")
+                conn.commit()
+    except psycopg.OperationalError as err:
+        logging.error(err)
+        return False
+    return True
 
-            conn.commit()
 
 def list_categories() -> list[str]:
 

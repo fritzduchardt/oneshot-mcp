@@ -1,8 +1,10 @@
 import asyncio
+import csv
+import io
 import logging
 import os
 from pathlib import Path
-from typing import Any
+from typing import Any, Dict, List, Optional
 
 import typer
 from weaviate.collections.classes.internal import Object
@@ -132,14 +134,22 @@ def call(
 
 @stats.command()
 def insert(
-        owner: str,
-        key: str,
-        value: str,
-        category: str,
-        description: str,
+        row: Optional[list[str]] = typer.Option(None, "--row", "-r", help="Row entry to add")
 ):
-    insert_stats(owner, key, value, category, description)
-    logging.info('Stat inserted successfully')
+    data:List[Dict[str,str]] = []
+    for r in row:
+        reader = csv.reader(io.StringIO(r))
+        row_data = next(reader)
+        data.append({
+            "owner": row_data[0],
+            "key": row_data[1],
+            "value": row_data[2],
+            "category": row_data[3],
+            "description": row_data[4],
+            "created_at": row_data[5]
+        })
+    insert_stats(data)
+    logging.info('Stats inserted successfully')
 
 
 @stats.command()

@@ -1,3 +1,4 @@
+import json
 import logging
 import os
 from pathlib import Path
@@ -12,16 +13,16 @@ from .social.ts import trump as t
 from .stats.stats import insert_stats as stats_insert_stats, list_categories as stats_list_categories
 from .weather.weatherapi import weatherapi
 
-log_level = os.environ.get("LOG_LEVEL", "INFO").upper()
+log_level = os.environ.get('LOG_LEVEL', 'INFO').upper()
 logging.basicConfig(
     level=log_level,
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    datefmt="%Y-%m-%d %H:%M:%S",
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S',
 )
 
-server_host = os.environ.get("HOST", "0.0.0.0")
-server_port = int(os.environ.get("PORT", "9000"))
-mcp = FastMCP(name="StatelessServer", stateless_http=False, host=server_host, port=server_port)
+server_host = os.environ.get('HOST', '0.0.0.0')
+server_port = int(os.environ.get('PORT', '9000'))
+mcp = FastMCP(name='StatelessServer', stateless_http=False, host=server_host, port=server_port)
 
 
 @mcp.tool()
@@ -32,7 +33,7 @@ def trump_tweets(start_date: str, end_date: str) -> str:
         start_date: start date
         end_date: end date
     """
-    logging.info(f"Looking for Trump tweets from: {start_date} to {end_date}")
+    logging.info(f'Looking for Trump tweets from: {start_date} to {end_date}')
     tweets = t.shoot(start_date, end_date)
     return tweets
 
@@ -89,18 +90,18 @@ def wikipedia(title: str) -> str:
 
 
 @mcp.tool()
-def insert_stats(owner: str, key: str, value: str, category: str, description: str) -> str:
-    """Insert stat
+def insert_stats(payload: str) -> str:
+    """Insert stats
 
     Args:
-        owner: owner
-        key: stat key
-        value: stat value
-        category: stat category
-        description: stat description
+        payload: json payload representing a list of stat objects, e.g. [{"owner":"alice","key":"k1","value":"v1","category":"finance","description":"monthly report"}]. Optionally: "created_at", e.g.:"2026-12-03 14:05:30"
     """
-    stats_insert_stats(owner, key, value, category, description)
-    return "OK"
+    parsed = json.loads(payload)
+    if not isinstance(parsed, list):
+        raise ValueError('payload must be a json list of objects')
+    if not stats_insert_stats(parsed):
+        return "Failure"
+    return 'OK'
 
 
 @mcp.tool()
@@ -120,39 +121,39 @@ async def weaviate_reindex(collection: str) -> str:
     Args:
         collection: collection to reindex. Allowed values: PatternFile, ObsidianFile
     """
-    logging.info(f"Calling weaviate reindex for: {collection}")
+    logging.info(f'Calling weaviate reindex for: {collection}')
     paths: list[str] = []
-    if collection == "PatternFile":
-        path = os.environ.get("OS_CONFIG_PATTERN_DIR")
+    if collection == 'PatternFile':
+        path = os.environ.get('OS_CONFIG_PATTERN_DIR')
         paths.append(path)
-    elif collection == "ObsidianFile":
-        base_dir = os.environ.get("OS_MARKDOWN_BASE_DIR")
+    elif collection == 'ObsidianFile':
+        base_dir = os.environ.get('OS_MARKDOWN_BASE_DIR')
         paths.append(f'{base_dir}/{os.environ.get("OS_MARKDOWN_VAULT_DIR_1")}')
         paths.append(f'{base_dir}/{os.environ.get("OS_MARKDOWN_VAULT_DIR_2")}')
     else:
-        logging.error(f"Collection unknown: {collection}")
-        return "Failure - Collection unknown"
+        logging.error(f'Collection unknown: {collection}')
+        return 'Failure - Collection unknown'
 
     if not paths:
-        logging.error(f"Path to collection: {collection} not provided")
-        return "Failure - Path not set up"
+        logging.error(f'Path to collection: {collection} not provided')
+        return 'Failure - Path not set up'
 
     for path in paths:
         if not Path(path).exists():
-            logging.error(f"Path to collection: {collection} incorrect: {path}")
-            return f"Failure - {collection} path incorrect"
+            logging.error(f'Path to collection: {collection} incorrect: {path}')
+            return f'Failure - {collection} path incorrect'
 
     if await weaviate_utils.reindex_collection(
         paths,
         collection,
-        os.getenv("WEAVIATE_HOST", "localhost"),
-        os.getenv("WEAVIATE_PORT", 80),
-        os.getenv("WEAVIATE_GRPC_HOST", "localhost"),
-        os.getenv("WEAVIATE_GRPC_PORT", 50051),
+        os.getenv('WEAVIATE_HOST', 'localhost'),
+        os.getenv('WEAVIATE_PORT', 80),
+        os.getenv('WEAVIATE_GRPC_HOST', 'localhost'),
+        os.getenv('WEAVIATE_GRPC_PORT', 50051),
     ):
-        return "OK"
-    return "Failure - failed to call weaviate"
+        return 'OK'
+    return 'Failure - failed to call weaviate'
 
 
-if __name__ == "__main__":
-    mcp.run(transport="streamable-http")
+if __name__ == '__main__':
+    mcp.run(transport='streamable-http')
