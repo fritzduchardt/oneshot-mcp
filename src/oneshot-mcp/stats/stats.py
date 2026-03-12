@@ -1,6 +1,6 @@
 import psycopg
 
-def insert_stat(owner:str, key:str, value: str, category: str, description: str):
+def insert_stats(owner:str, key:str, value: str, category: str, description: str):
 
     with psycopg.connect("dbname=oneshot user=app") as conn:
 

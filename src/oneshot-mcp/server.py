@@ -9,7 +9,7 @@ from .knowledge.wikipedia import wikipedia as wp
 from .news.rapid import news_search
 from .rag import weaviate_utils
 from .social.ts import trump as t
-from .stats.stats import insert_stat, list_categories
+from .stats.stats import insert_stats as stats_insert_stats, list_categories as stats_list_categories
 from .weather.weatherapi import weatherapi
 
 log_level = os.environ.get("LOG_LEVEL", "INFO").upper()
@@ -89,7 +89,7 @@ def wikipedia(title: str) -> str:
 
 
 @mcp.tool()
-def insert_stat_tool(owner: str, key: str, value: str, category: str, description: str) -> str:
+def insert_stats(owner: str, key: str, value: str, category: str, description: str) -> str:
     """Insert stat
 
     Args:
@@ -99,18 +99,18 @@ def insert_stat_tool(owner: str, key: str, value: str, category: str, descriptio
         category: stat category
         description: stat description
     """
-    insert_stat(owner, key, value, category, description)
+    stats_insert_stats(owner, key, value, category, description)
     return "OK"
 
 
 @mcp.tool()
-def list_stat_categories() -> list[str]:
+def list_stats_categories() -> list[str]:
     """List stat categories
 
     Returns:
         list of unique stat categories sorted ascending
     """
-    return list_categories()
+    return stats_list_categories()
 
 
 @mcp.tool()

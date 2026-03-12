@@ -12,7 +12,7 @@ from .knowledge.wikipedia import wikipedia as wp
 from .news.rapid import news_search
 from .rag import weaviate_utils
 from .social.ts import trump as t
-from .stats.stats import insert_stat, list_categories
+from .stats.stats import insert_stats, list_categories
 from .weather.weatherapi import weatherapi
 
 log_level = os.environ.get('LOG_LEVEL', 'INFO').upper()
@@ -138,7 +138,7 @@ def insert(
         category: str,
         description: str,
 ):
-    insert_stat(owner, key, value, category, description)
+    insert_stats(owner, key, value, category, description)
     logging.info('Stat inserted successfully')
 
 
