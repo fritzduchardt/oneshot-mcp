@@ -9,6 +9,7 @@ from .knowledge.wikipedia import wikipedia as wp
 from .news.rapid import news_search
 from .rag import weaviate_utils
 from .social.ts import trump as t
+from .stats.stats import insert_stat, list_categories
 from .weather.weatherapi import weatherapi
 
 log_level = os.environ.get("LOG_LEVEL", "INFO").upper()
@@ -88,6 +89,31 @@ def wikipedia(title: str) -> str:
 
 
 @mcp.tool()
+def insert_stat_tool(owner: str, key: str, value: str, category: str, description: str) -> str:
+    """Insert stat
+
+    Args:
+        owner: owner
+        key: stat key
+        value: stat value
+        category: stat category
+        description: stat description
+    """
+    insert_stat(owner, key, value, category, description)
+    return "OK"
+
+
+@mcp.tool()
+def list_stat_categories() -> list[str]:
+    """List stat categories
+
+    Returns:
+        list of unique stat categories sorted ascending
+    """
+    return list_categories()
+
+
+@mcp.tool()
 async def weaviate_reindex(collection: str) -> str:
     """Weaviate reindex
 
@@ -101,8 +127,8 @@ async def weaviate_reindex(collection: str) -> str:
         paths.append(path)
     elif collection == "ObsidianFile":
         base_dir = os.environ.get("OS_MARKDOWN_BASE_DIR")
-        paths.append(f"{base_dir}/{os.environ.get("OS_MARKDOWN_VAULT_DIR_1")}")
-        paths.append(f"{base_dir}/{os.environ.get("OS_MARKDOWN_VAULT_DIR_2")}")
+        paths.append(f'{base_dir}/{os.environ.get("OS_MARKDOWN_VAULT_DIR_1")}')
+        paths.append(f'{base_dir}/{os.environ.get("OS_MARKDOWN_VAULT_DIR_2")}')
     else:
         logging.error(f"Collection unknown: {collection}")
         return "Failure - Collection unknown"
@@ -116,7 +142,14 @@ async def weaviate_reindex(collection: str) -> str:
             logging.error(f"Path to collection: {collection} incorrect: {path}")
             return f"Failure - {collection} path incorrect"
 
-    if await weaviate_utils.reindex_collection(paths, collection, os.getenv("WEAVIATE_HOST", "localhost"), os.getenv("WEAVIATE_PORT", 80), os.getenv("WEAVIATE_GRPC_HOST", "localhost"), os.getenv("WEAVIATE_GRPC_PORT", 50051)):
+    if await weaviate_utils.reindex_collection(
+        paths,
+        collection,
+        os.getenv("WEAVIATE_HOST", "localhost"),
+        os.getenv("WEAVIATE_PORT", 80),
+        os.getenv("WEAVIATE_GRPC_HOST", "localhost"),
+        os.getenv("WEAVIATE_GRPC_PORT", 50051),
+    ):
         return "OK"
     return "Failure - failed to call weaviate"
 
