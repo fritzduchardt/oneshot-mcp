@@ -14,7 +14,7 @@ from .knowledge.wikipedia import wikipedia as wp
 from .news.rapid import news_search
 from .rag import weaviate_utils
 from .social.ts import trump as t
-from .stats.stats import insert_stats, list_categories, read_stats
+from .stats.stats import insert_stats, list_categories, normalize_stats_keys, read_stats
 from .weather.weatherapi import weatherapi
 
 log_level = os.environ.get('LOG_LEVEL', 'INFO').upper()
@@ -166,6 +166,14 @@ def read(
 ):
     rows = read_stats(owners, category, key)
     print(rows)
+
+
+@stats.command()
+def normalize(
+        category: str,
+):
+    updated_count = normalize_stats_keys(category)
+    print({'updated': updated_count})
 
 
 if __name__ == '__main__':

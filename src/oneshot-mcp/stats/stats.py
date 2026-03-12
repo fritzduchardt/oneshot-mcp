@@ -1,10 +1,11 @@
 import logging
-from typing import Dict, List, Optional
+import re
+from typing import Dict, List, Optional, Union
 
 import psycopg
 
 
-def insert_stats(data: List[Dict[str, str]]) -> bool:
+def insert_stats(data: List[Dict[str, object]]) -> bool:
 
     try:
         with psycopg.connect('dbname=oneshot user=app') as conn:
@@ -16,12 +17,12 @@ def insert_stats(data: List[Dict[str, str]]) -> bool:
                     if 'created_at' in row and row['created_at'] is not None:
                         cur.execute(
                             'INSERT INTO oneshot_stats (owner, key, value, category, description, created_at) VALUES (%s, %s, %s, %s, %s, %s)',
-                            (row['owner'], row['key'], row['value'], row['category'], row['description'], row['created_at'])
+                            (row['owner'], _normalize_key(row['key']), _normalize_value(row['value']), _normalize_category(row['category']), row['description'], row['created_at'])
                         )
                     else:
                         cur.execute(
                             'INSERT INTO oneshot_stats (owner, key, value, category, description) VALUES (%s, %s, %s, %s, %s)',
-                            (row['owner'], row['key'], row['value'], row['category'], row['description'])
+                            (row['owner'], _normalize_key(row['key']), _normalize_value(row['value']), _normalize_category(row['category']), row['description'])
                         )
                     logging.info(f'Inserted oneshot stat: {row}')
                 conn.commit()
@@ -86,5 +87,52 @@ def read_stats(owners: List[str], category: str, key: Optional[str] = None) -> L
             return results
 
 
+def normalize_stats_keys(category: str) -> int:
+    logging.info(f'Normalizing stat keys for category: {category}')
+    normalized_category = _normalize_category(category)
+    updated = 0
+    with psycopg.connect('dbname=oneshot user=app') as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                'SELECT id, key, value FROM oneshot_stats WHERE LOWER(category) = %s',
+                (normalized_category,)
+            )
+            rows = cur.fetchall()
+            for row_id, original_key, original_value in rows:
+                normalized_key = _normalize_key(original_key)
+                normalized_value = _normalize_value(original_value)
+                if normalized_key == original_key and normalized_value == original_value:
+                    continue
+                cur.execute(
+                    'UPDATE oneshot_stats SET key = %s, value = %s WHERE id = %s',
+                    (normalized_key, normalized_value, row_id)
+                )
+                updated += cur.rowcount
+            conn.commit()
+    return updated
+
+
 def _format_created_at(created_at) -> str:
     return created_at.isoformat(sep=' ', timespec='seconds')
+
+
+def _normalize_category(category: str) -> str:
+    return category.strip().lower()
+
+
+def _normalize_key(key: str) -> str:
+    normalized = key.strip().lower().replace("-", "")
+    return _singularize(normalized)
+
+
+def _normalize_value(value: str) -> str:
+    stripped = str(value).strip()
+    return re.sub(r'[^0-9\.]', '', stripped)
+
+
+def _singularize(value: str) -> str:
+    if len(value) > 3 and value.endswith('ies'):
+        return value[:-3] + 'y'
+    if len(value) > 1 and value.endswith('s') and not value.endswith('ss'):
+        return value[:-1]
+    return value

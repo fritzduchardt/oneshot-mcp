@@ -10,7 +10,7 @@ from .knowledge.wikipedia import wikipedia as wp
 from .news.rapid import news_search
 from .rag import weaviate_utils
 from .social.ts import trump as t
-from .stats.stats import insert_stats as stats_insert_stats, list_categories as stats_list_categories, read_stats as stats_read_stats
+from .stats.stats import insert_stats as stats_insert_stats, list_categories as stats_list_categories, normalize_stats_keys as stats_normalize_stats_keys, read_stats as stats_read_stats
 from .weather.weatherapi import weatherapi
 
 log_level = os.environ.get('LOG_LEVEL', 'INFO').upper()
@@ -124,6 +124,17 @@ def read_stats(owners: list[str], category: str, key: str | None = None) -> list
         key: key filter
     """
     return stats_read_stats(owners, category, key)
+
+
+@mcp.tool()
+def normalize_stats_keys(category: str) -> dict:
+    """Normalize stat keys in a category
+
+    Args:
+        category: category filter
+    """
+    updated_count = stats_normalize_stats_keys(category)
+    return {'updated': updated_count}
 
 
 @mcp.tool()
