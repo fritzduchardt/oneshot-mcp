@@ -8,4 +8,5 @@ dependencies = [
 	"typer",
 	"weaviate-client>=4.20.1",
 	"psycopg>=3.3.3",
+	"pymongo>=4.16.0",
 ]
