@@ -30,17 +30,6 @@ def insert_stats(collection: str, payload: str) -> bool:
         return False
 
 
-def list_distinct(collection: str, field: str) -> list[str]:
-    logging.info(f'In {collection} listing distinct values of: {field}')
-    try:
-        collection = db[collection]
-        return sorted(collection.distinct(field))
-
-    except Exception as e:
-        logging.error(f'Mongo failure: {e}')
-        return []
-
-
 def read_stats(collection: str, filters: str) -> list[dict[str, Any]] | None:
     logging.info(f'Reading stats for: {collection} with: {filters}')
     try:
