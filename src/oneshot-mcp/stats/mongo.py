@@ -2,14 +2,14 @@ import atexit
 import json
 import logging
 import os
-from typing import Dict, List, Any
+from typing import Any
 
 from pymongo import MongoClient
 
 client = MongoClient(
-    f'mongodb://{os.environ.get("MONGO_HOST", "localhost")}:{os.environ.get("MONGO_PORT", 27017)}'
+    f"mongodb://{os.environ.get('MONGO_HOST', 'localhost')}:{os.environ.get('MONGO_PORT', 27017)}"
 )
-db = client['oneshot']
+db = client["oneshot"]
 
 
 @atexit.register
@@ -18,7 +18,7 @@ def close_mongo_client():
 
 
 def insert_stats(collection: str, payload: str) -> bool:
-    logging.info(f'Inserts into collection: {collection}, payload: {payload}')
+    logging.info(f"Inserts into collection: {collection}, payload: {payload}")
 
     try:
         collection = db[collection]
@@ -26,21 +26,33 @@ def insert_stats(collection: str, payload: str) -> bool:
         return True
 
     except Exception as e:
-        logging.error(f'Mongo failure: {e}')
+        logging.error(f"Mongo failure: {e}")
         return False
 
 
 def read_stats(collection: str, filters: str) -> list[dict[str, Any]] | None:
-    logging.info(f'Reading stats for: {collection} with: {filters}')
+    logging.info(f"Reading stats for: {collection} with: {filters}")
     try:
         collection = db[collection]
         results = collection.find(json.loads(filters))
         result_list = []
         for result in results:
-            result.pop('_id', None)
+            result.pop("_id", None)
             result_list.append(result)
         return result_list
 
     except Exception as e:
-        logging.error(f'Mongo failure: {e}')
+        logging.error(f"Mongo failure: {e}")
         return None
+
+
+def delete_stats(collection: str, filters: str) -> int:
+    logging.info(f"Deleting stats for: {collection} with: {filters}")
+    try:
+        collection = db[collection]
+        result = collection.delete_many(json.loads(filters))
+        return int(result.deleted_count)
+
+    except Exception as e:
+        logging.error(f"Mongo failure: {e}")
+        return 0

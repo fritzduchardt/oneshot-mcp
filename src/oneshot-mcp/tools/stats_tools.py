@@ -33,3 +33,15 @@ def register_stats_tools(mcp) -> None:
         ret_val = mongo.read_stats(collection.lower(), filters.lower())
         logging.info(f"Stats results: {ret_val}")
         return TextContent(type="text", text=json.dumps(ret_val))
+
+    @mcp.tool()
+    def delete_stats(collection: str, filters: str) -> int:
+        """Delete Private Stats
+
+        Args:
+            collection: collection name
+            filters: mongodb filter query in json format, e.g. {owner":"alice","key":"k1","value":"v1"}
+        """
+        ret_val = mongo.delete_stats(collection.lower(), filters.lower())
+        logging.info(f"Deleted rows: {ret_val}")
+        return ret_val
