@@ -9,6 +9,20 @@ from ..stats import mongo
 def register_stats_tools(mcp) -> None:
 
     @mcp.tool()
+    def update_stats(collection: str, filter_json: str, update_json: str) -> str:
+        """Update Private Stats
+
+        Args:
+            collection: collection name
+            filter_json: json payload with mongo filter condition, e.g. {"status": "inactive"}"
+            update_json: json payload with mongo update condition {"$set": {"status": "archived", "updated_at": "17.03.2026"}}
+        """
+
+        if not mongo.update_stats(collection.lower(), filter_json.lower(), update_json.lower()):
+            return "Failure"
+        return 'OK'
+
+    @mcp.tool()
     def insert_stats(collection: str, payload: str) -> str:
         """Insert Private Stats
 

@@ -29,6 +29,18 @@ def insert_stats(collection: str, payload: str) -> bool:
         logging.error(f"Mongo failure: {e}")
         return False
 
+def update_stats(collection: str, filter_json: str, update_json: str) -> bool:
+    logging.info(f"Updates into collection: {collection}, filter: {filter_json}, update:  {update_json}")
+
+    try:
+        collection = db[collection]
+        collection.update_many(json.loads(filter_json), json.loads(update_json))
+        return True
+
+    except Exception as e:
+        logging.error(f"Mongo failure: {e}")
+        return False
+
 
 def read_stats(collection: str, filters: str) -> list[dict[str, Any]] | None:
     logging.info(f"Reading stats for: {collection} with: {filters}")
