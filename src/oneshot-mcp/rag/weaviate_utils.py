@@ -1,5 +1,4 @@
 import asyncio
-import json
 import logging
 import os
 from pathlib import Path
@@ -93,7 +92,7 @@ async def create_bounded_insert_task(request_semaphore, weaviate_collection, fil
         )
 
 
-async def call_weaviate(collection: str, prompt: str, limit: int, certainty: int, weaviate_host: str, weaviate_port: int, weaviate_grpc_host: str, weaviate_grpc_port: int) -> list[Object[Any, Any]]:
+async def call_weaviate(collection: str, prompt: str, limit: int, certainty: float, weaviate_host: str, weaviate_port: int, weaviate_grpc_host: str, weaviate_grpc_port: int) -> list[Object[Any, Any]]:
     with weaviate.WeaviateClient(
             connection_params=ConnectionParams.from_params(
                 http_host=weaviate_host,
