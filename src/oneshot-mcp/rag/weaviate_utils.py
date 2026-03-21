@@ -9,6 +9,7 @@ from weaviate.classes.config import Configure, DataType, Property
 from weaviate.classes.init import AdditionalConfig, Timeout
 from weaviate.collections.classes.internal import Object
 from weaviate.connect import ConnectionParams
+from weaviate.collections.classes.grpc import MetadataQuery
 
 
 def create_async_client(weaviate_host: str, weaviate_port: int, weaviate_grpc_host: str, weaviate_grpc_port: int):
@@ -104,11 +105,28 @@ async def call_weaviate(collection: str, prompt: str, limit: int, certainty: flo
             ),
     ) as client:
         pattern = client.collections.use(collection)
-        from weaviate.collections.classes.grpc import MetadataQuery
-        response = pattern.query.near_text(
-            query=prompt,
-            limit=limit,
-            certainty=certainty,
-            return_metadata=MetadataQuery(distance=True)
-        )
+        if collection == "PatternFile":
+            prompt = " ".join(prompt.split(maxsplit=2)[:2])
+            ## KEYWORD
+            logging.info(f"Collection: {collection}")
+            logging.info(f"Prompt: {prompt}")
+            response = pattern.query.bm25(
+                query=prompt,
+                query_properties=["path", "content"],
+                limit=limit
+            )
+            # response = pattern.query.hybrid(
+            #     query=prompt,
+            #     alpha=0.8,
+            #     limit=10,
+            #     return_metadata=MetadataQuery(score=True, explain_score=True)
+            # )
+        else:
+            response = pattern.query.near_text(
+                query=prompt,
+                limit=limit,
+                certainty=certainty,
+                return_metadata=MetadataQuery(distance=True)
+            )
+            # HYPRID
         return response.objects
