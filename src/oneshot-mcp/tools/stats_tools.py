@@ -43,6 +43,18 @@ def register_stats_tools(mcp) -> None:
         return ret_val
 
     @mcp.tool()
+    def aggregate_stats(collection: str, query: str) -> list[dict]:
+        """Read Aggregate Stats
+
+        Args:
+            collection: collection name
+            query: mongodb aggregate query in json format
+       """
+        ret_val = mongo.aggregate_stats(collection.lower(), query.lower())
+        logging.info(f"Stats results: {ret_val}")
+        return ret_val
+
+    @mcp.tool()
     def delete_stats(collection: str, filters: str) -> int:
         """Delete Private Stats
 

@@ -16,7 +16,7 @@ def register_rag_tools(mcp) -> None:
         logging.info(f'Calling weaviate reindex for: {collection}')
         paths: list[str] = []
         if collection == 'PatternFile':
-            path = os.environ.get('OS_CONFIG_PATTERN_DIR')
+            path = os.environ.get('OS_SYNC_PATTERN_DIR')
             paths.append(path)
         elif collection == 'ObsidianFile':
             base_dir = os.environ.get('OS_MARKDOWN_BASE_DIR')

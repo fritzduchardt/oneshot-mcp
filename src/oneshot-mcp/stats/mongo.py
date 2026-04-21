@@ -57,6 +57,21 @@ def read_stats(collection: str, filters: str) -> list[dict[str, Any]] | None:
         logging.error(f"Mongo failure: {e}")
         return None
 
+def aggregate_stats(collection: str, filters: str) -> list[dict[str, Any]] | None:
+    logging.info(f"Reading aggregate for: {collection} with: {filters}")
+    try:
+        collection = db[collection]
+        results = collection.aggregate(json.loads(filters))
+        result_list = []
+        for result in results:
+            result.pop("_id", None)
+            result_list.append(result)
+        return result_list
+
+    except Exception as e:
+        logging.error(f"Mongo failure: {e}")
+        return None
+
 
 def delete_stats(collection: str, filters: str) -> int:
     logging.info(f"Deleting stats for: {collection} with: {filters}")
