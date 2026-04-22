@@ -44,7 +44,7 @@ def register_stats_tools(mcp) -> None:
 
     @mcp.tool()
     def aggregate_stats(collection: str, query: str) -> list[dict]:
-        """Read Aggregate Stats
+        """Aggregate Private Stats. Use for aggregations like max / best results, min / lowest results, last or unique results.
 
         Args:
             collection: collection name
