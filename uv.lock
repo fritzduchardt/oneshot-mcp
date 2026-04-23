@@ -438,6 +438,7 @@ source = { virtual = "." }
 dependencies = [
     { name = "anthropic" },
     { name = "mcp", extra = ["cli"] },
+    { name = "packaging" },
     { name = "psycopg" },
     { name = "pymongo" },
     { name = "requests" },
@@ -449,6 +450,7 @@ dependencies = [
 requires-dist = [
     { name = "anthropic", specifier = ">=0.77.1" },
     { name = "mcp", extras = ["cli"], specifier = ">=1.26.0" },
+    { name = "packaging", specifier = ">=26.0" },
     { name = "psycopg", specifier = ">=3.3.3" },
     { name = "pymongo", specifier = ">=4.16.0" },
     { name = "requests", specifier = ">=2.32.5" },
